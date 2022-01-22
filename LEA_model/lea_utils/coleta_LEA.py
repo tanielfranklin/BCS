@@ -4,6 +4,7 @@
 import scipy.io
 import numpy as np
 import math
+
 def dados_exp_LEA(file_path,interval=np.array([0,np.inf])):
     #local do arquivo .mat do matlab coletado pelo experimento
     #interval = define o subdominio de dados experimentais em horas a ser usado
