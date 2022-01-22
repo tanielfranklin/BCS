@@ -8,6 +8,7 @@ Created on Sun Apr 11 21:44:16 2021
 import numpy as np
 from casadi import *
 from matplotlib import pyplot as plt
+# %matplotlib tk
 plt.style.use('seaborn-poster')
 import timeit
 import EKF
@@ -107,7 +108,8 @@ print('Simulando cenário')
 for k in range(1,nsim):
     print('Tempo:',k*ts, 'k=',k)
     
-    uk_1 = np.array([[60], [70]]);
+    uk_1 = np.array([[60], [50]]);
+    #uk_1 = np.array([[50], [50]]);
     
     # Modelo n�o linear
     [xpk,ypk] = Modelo_Predicao(xpk,np.vstack((uk_1,uss[de])));
@@ -154,10 +156,18 @@ ax.legend();
 ax.set_xlabel('Time (nT)')
 fig1.show()
 
-#%%
-Xk[0:3,-1]
+#plotando os estados
+fig4=plt.figure()
+label = ['Pbh', 'Pbw', 'q', 'fq'];
+for i in range(0,3):
+    ax4 = fig4.add_subplot(3, 1, i+1)
+    ax4.plot(xi,Xk[i,:].T,label=label[i])
+    ax4.set_ylabel(label[i])
+ax4.legend();
+ax4.set_xlabel('Time (nT)')
+fig4.show()
 
-#%%
+Xk[0:3,-1]
 
 
 fig2=plt.figure()
@@ -196,14 +206,7 @@ ax3.annotate('t='+str(nsim),
              arrowprops=dict(facecolor='black', shrink=0.01))
 plt.show()
 
-#plotando os estados
-fig4=plt.figure()
-label = ['Pbh', 'Pbw', 'q', 'fq'];
 
-for i in range(0,3):
-    ax4 = fig4.add_subplot(3, 1, i+1)
-    ax4.plot(xi,Xk[i,:].T,label=label[i])
-    ax4.set_ylabel(label[i])
-ax4.legend();
-ax4.set_xlabel('Time (nT)')
-fig4.show()
+
+print('ok')
+#np.savez('BCS_data_train.npz', t=xi, x1=Xk[0,:].T,x2=Xk[1,:].T,x3=Xk[2,:].T)

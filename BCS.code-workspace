@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"python.pythonPath": "/home/taniel/anaconda3/envs/BCS/bin/python",
+		"jupyter.jupyterServerType": "local"
+	}
+}

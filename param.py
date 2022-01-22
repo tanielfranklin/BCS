@@ -37,3 +37,5 @@ Cp = -4.4376*mu**4 + 11.091*mu**3 -9.9306*mu**2 + 3.9042*mu + 1;
 # b2 = 1.5;   # Bulk modulus above ESP [Pa]
 # M  = 1.992; # Fluid inertia parameters [kg/m4]
 # pr = 1.26;  # Reservoir pressure
+
+print('Dados carregados')
