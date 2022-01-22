@@ -1,4 +1,5 @@
 import numpy as np
+from matplotlib import pyplot as plt
 
 def plot_exogenous(tempo,exo):
     label = ['f(Hz)','z(%)','Pman(bar)','Pr(bar)'];
@@ -11,7 +12,6 @@ def plot_exogenous(tempo,exo):
         # ax1.plot(tempo_hora ,output_signal/1e5, ':r')
         ax1.set_ylabel(label[i])
         if i+1!=len(exo):
-            print(i,len(exo))
             ax1.set_xticklabels([])
         plt.grid(True)
 
