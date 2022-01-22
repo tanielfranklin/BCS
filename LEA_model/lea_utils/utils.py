@@ -14,6 +14,23 @@ def plot_exogenous(tempo,exo):
         if i+1!=len(exo):
             ax1.set_xticklabels([])
         plt.grid(True)
+    return fig3
+
+def plot_states(tempo,st):
+    label = ['Pbh(bar)','Pwh(bar)','q(m3/h)'];
+    st[0]=st[0]/1e5
+    st[1]=st[1]/1e5
+    st[2]=st[2]*3600
+    fig3=plt.figure()
+    for i,var in enumerate(st):
+        ax1=fig3.add_subplot(len(label),1,i+1)
+        ax1.plot(tempo ,var, label=label[i])
+        # ax1.plot(tempo_hora ,output_signal/1e5, ':r')
+        ax1.set_ylabel(label[i])
+        if i+1!=len(st):
+            ax1.set_xticklabels([])
+        plt.grid(True)
+    return fig3
 
 def APRBS(a_range,b_range,nstep):
     # random signal generation
