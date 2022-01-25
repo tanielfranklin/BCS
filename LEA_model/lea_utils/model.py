@@ -5,7 +5,6 @@ from casadi import sqrt as csqrt
 from casadi import fabs
 
 def EDO(x,u):
-
     pi=3.141592653589793    
     def Lim_c(x):
         return x[1]-x[0]
@@ -42,9 +41,9 @@ def EDO(x,u):
     Anular = 0.033595; 
     rho_1 = 836.8898;    # Density of produced fluid [kg/m�?³]
     rho_2 = 836.8898;
-    pr = 2.1788e5;  # Reservoir pressure 
-    pm = 1.3394e+04;  # manifold pressure
-    PI = 2.7e-8; # Well productivy index [m3/s/Pa]
+    #pr = 2.1788e5;  # Reservoir pressure 
+    #pm = 1.3394e+04;  # manifold pressure
+    PI = 2.7e-8; # Well production index [m3/s/Pa]
     mu  = 0.012;  # Viscosity [Pa*s]
     dfq_max = 0.5;    # m�xima varia��o em f/s
     dzc_max = 1;  # m�xima varia��o em zc #/s
@@ -108,8 +107,6 @@ def EDO(x,u):
     P0 = -2.3599e9 * q0 ** 3 - 1.8082e7 * q0 ** 2 + 4.3346e6 * q0 + 9.4355e4
     #P = Cp * P0 * (fq / f0) ** 3;  
     #I = Inp * P / Pnp  
-    #==============================================
-    # Computing two volumes frictions in LEA piping
     # Computing two volumes frictions in LEA piping
     qan=q*qc+qmin # non normalized flow
     Re =(4*rho*qan)/(0.219*pi*mu); # Assuming volumes density are identicals
@@ -134,33 +131,12 @@ def EDO(x,u):
     # Computing flow across Choke valvule
     qch = Cc * (zc) * csqrt(fabs(pwh*pwc+pwmin - pm));
     #============================================
-    # # Nonlinear terms analysis
-    # funcF1=Function('funcF1',[x],[F1])
-    # funcF2=Function('funcF2',[x],[F2])
-    # funcH=Function('funcH',[x,u],[H])
-    # funcqch=Function('funqch',[x,u],[qch])
-    # F1lim=(funcF1([0,0,qlim[0]]),funcF1([0,0,qlim[1]])) # Limits  F1
-    # F2lim=(funcF2([0,0,qlim[0]]),funcF2([0,0,qlim[1]])) # Limits  F2
-    # F1c=Lim_c(F1lim) # characteristic value F1
-    # F2c=Lim_c(F2lim) # characteristic value F2
-    # Hc=Lim_c(H_lim) # characteristic value H
-    # qcc=Lim_c(qch_lim) # characteristic value qch
-
     F1c=2.92634e-05
     F2c=0.000738599
     Hc=215.9226497597185
     qcc=0.0020328441729756536
     F1lim=(0.000439365,0.000439365)
     F2lim=(0.0110894,0.0110894)
-
-
-    #=============================
-    #Disabling normalization (other actions is necessary ahead to disable pbc,pwc,qc)
-    # F1c=1;F1lim=(0,1) # characteristic value F1
-    # F2c=1;F2lim=(0,1) # characteristic value F2
-    # Hc=1;H_lim=(0,1) # characteristic value H
-    # qcc=1;qch_lim=(0,1) # characteristic value qch
-
     qch_lim=(6.69674349099543e-5, 0.0020998116078856078)
     H_lim=(-11.492505101438962, 204.43014465827954)
 
@@ -174,8 +150,6 @@ def EDO(x,u):
     ###########################
     #xss=np.float32(np.array([2.0197e5,4.9338e5,4.2961e-4]));
     # xss=x_0;uss=u_0
-
-
     dpbhdt = (1/pbc)*b1/V1*(qr - (q*qc+qmin))
     dpwhdt = (1/pwc)*b2/V2*((q*qc+qmin) - (qcc*qch+qch_lim[0]))
     dqdt = (1/(qc*M))*(pbh*pbc+pbmin + rho * g * (H*Hc+H_lim[0]) - (pwh*pwc+pwmin) - rho*g*hw - (F1c*F1+F1lim[0]) - (F2c*F2+F2lim[0]))
