@@ -1,38 +1,38 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-def plot_exogenous(tempo,exo):
-    label = ['f(Hz)','z(%)','Pman(bar)','Pr(bar)'];
-    exo[2]=exo[2]/1e5
-    exo[3]=exo[3]/1e5
-    fig3=plt.figure()
-    for i,var in enumerate(exo):
-        ax1=fig3.add_subplot(len(label),1,i+1)
-        ax1.plot(tempo ,var, label=label[i])
-        # ax1.plot(tempo_hora ,output_signal/1e5, ':r')
-        ax1.set_ylabel(label[i])
-        if i+1!=len(exo):
-            ax1.set_xticklabels([])
-        plt.grid(True)
-    return fig3
-def plot_states(tempo,st):
-    label = ['Pbh(bar)','Pwh(bar)','q(m3/h)'];
-    ### Set Enginneering dimensions###########
-    x_set_dim=[1/1e5,1/1e5,3600]
-    var=[]
-    for i,j in zip(st,x_set_dim ):
-        var.append(i*j)   
-    ###########################################
+# def plot_exogenous(tempo,exo):
+#     label = ['f(Hz)','z(%)','Pman(bar)','Pr(bar)'];
+#     exo[2]=exo[2]/1e5
+#     exo[3]=exo[3]/1e5
+#     fig3=plt.figure()
+#     for i,var in enumerate(exo):
+#         ax1=fig3.add_subplot(len(label),1,i+1)
+#         ax1.plot(tempo ,var, label=label[i])
+#         # ax1.plot(tempo_hora ,output_signal/1e5, ':r')
+#         ax1.set_ylabel(label[i])
+#         if i+1!=len(exo):
+#             ax1.set_xticklabels([])
+#         plt.grid(True)
+#     return fig3
+# def plot_states(tempo,st):
+#     label = ['Pbh(bar)','Pwh(bar)','q(m3/h)'];
+#     ### Set Enginneering dimensions###########
+#     x_set_dim=[1/1e5,1/1e5,3600]
+#     var=[]
+#     for i,j in zip(st,x_set_dim ):
+#         var.append(i*j)   
+#     ###########################################
 
-    fig3=plt.figure()
-    for i,var in enumerate(var):
-        ax1=fig3.add_subplot(len(label),1,i+1)
-        ax1.plot(tempo ,var, label=label[i])
-        ax1.set_ylabel(label[i])
-        if i+1!=len(st):
-            ax1.set_xticklabels([])
-        plt.grid(True)
-    return fig3
+#     fig3=plt.figure()
+#     for i,var in enumerate(var):
+#         ax1=fig3.add_subplot(len(label),1,i+1)
+#         ax1.plot(tempo ,var, label=label[i])
+#         ax1.set_ylabel(label[i])
+#         if i+1!=len(st):
+#             ax1.set_xticklabels([])
+#         plt.grid(True)
+#     return fig3
 
 def plot_states_double(tempo,ss,ss_exp):
     label = ['Pbh(bar)','Pwh(bar)','q(m3/h)'];
