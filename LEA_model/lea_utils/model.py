@@ -8,11 +8,11 @@ def EDO(x,u):
     pi=3.141592653589793    
     def Lim_c(x):
         return x[1]-x[0]
-
-    pbh = x[0]
-    pwh = x[1]
-    q = x[2]
-    fqref = u[0]; zcref = u[1]; pm=u[2]; pr=u[3]
+    ###############################
+    # Valor normalizado dos estados
+    pbh = x[0]; pwh = x[1]; q = x[2]
+    ###############################
+    fq = u[0]; zc = u[1]; pm=u[2]; pr=u[3]
     g   = 9.81;   # Gravitational acceleration constant [m/s�]
     Cc = 3.10049373466703e-08 ;   # Choke valve constant
     hw = 32;    # Total vertical distance in well [m]
@@ -88,14 +88,7 @@ def EDO(x,u):
     pbmin=pbhlim[0]
     pwmin=pwhlim[0]
     qmin=qlim[0]
-    #=============================
-    #Disabling normalization (other actions is necessary ahead to disable Hc, F1c, F2c, qcc)
-    # pbc=1;pwc=1;qc=1
-    # pbmin=0;pwmin=0;qmin=0
-    #=============================     
-    #pm=2e6;
-    zc=zcref
-    fq=fqref
+  
     #=============================================
     # Computing HEAD and pump pressure gain of LEA
     q0 = (qc*q+qmin) / Cq * (f0 / fq)
@@ -124,8 +117,7 @@ def EDO(x,u):
     # F2 = (fric_2*qan**2*rho_2)/(2*pi*r2**3) #Frictional pressure drop above ESP
     #===========================================
     #===========================================
-    # Computing intake pressure
-    pin = pbh*pbc+pbmin - rho * g * h1 - F1;
+
     # Computing Reservoir flow
     qr = PI * (pr - (pbh*pbc+pbmin));
     # Computing flow across Choke valvule
@@ -148,9 +140,12 @@ def EDO(x,u):
     F2=(F2-F2lim[0])/F2c
     H=(H-H_lim[0])/Hc
     ###########################
+    # Computing intake pressure
+    pin = pbh*pbc+pbmin - rho * g * h1 - F1*F1c+F1lim[0];
+
     #xss=np.float32(np.array([2.0197e5,4.9338e5,4.2961e-4]));
     # xss=x_0;uss=u_0
     dpbhdt = (1/pbc)*b1/V1*(qr - (q*qc+qmin))
     dpwhdt = (1/pwc)*b2/V2*((q*qc+qmin) - (qcc*qch+qch_lim[0]))
     dqdt = (1/(qc*M))*(pbh*pbc+pbmin + rho * g * (H*Hc+H_lim[0]) - (pwh*pwc+pwmin) - rho*g*hw - (F1c*F1+F1lim[0]) - (F2c*F2+F2lim[0]))
-    return dpbhdt,dpwhdt,dqdt,pin,H
+    return dpbhdt,dpwhdt,dqdt,pin,H*Hc+H_lim[0]
