@@ -17,6 +17,6 @@ def norm_values():
     pwmin=pwhlim[0]
     qmin=qlim[0]
     #xss = np.float32(np.array([8311024.82175957,2990109.06207437,0.00995042241351780]))
-    x0=np.array([pbmin,pwmin,qmin])#,0,0])
-    xc=np.array([pbc,pwc,qc])#,1,1])
+    x0=np.array([pbmin,pwmin,qmin]).reshape(1,3)#,0,0])
+    xc=np.array([pbc,pwc,qc]).reshape(1,3)#,1,1])
     return xc,x0
