@@ -104,20 +104,8 @@ def EDO(x,u):
     qan=q*qc+qmin # non normalized flow
     Re =(4*rho*qan)/(0.219*pi*mu); # Assuming volumes density are identicals
     fric=64/Re 
-
     F1 = (fric*qan**2*rho)/(2*pi*r1**3) #Frictional pressure drop above ESP (Assuming laminar flow)
     F2 = (fric*qan**2*rho)/(2*pi*r2**3) #Frictional pressure drop below ESP (Assuming laminar flow)
-
-    # qan=q*qc+qmin # non normalized flow
-    # Re_1 = (4*rho_1*qan)/(0.219*pi*mu);
-    # Re_2 = (4*rho_2*qan)/(0.219*pi*mu);
-    # fric_1=if_else(Re_1<4000, 64/Re_1,0.36*Re_1**(-0.25))
-    # fric_2=if_else(Re_1<4000, 64/Re_2,0.36*Re_2**(-0.25))
-    # F1 = (fric_1*qan**2*rho_1)/(2*pi*r1**3) #Frictional pressure drop below ESP
-    # F2 = (fric_2*qan**2*rho_2)/(2*pi*r2**3) #Frictional pressure drop above ESP
-    #===========================================
-    #===========================================
-
     # Computing Reservoir flow
     qr = PI * (pr - (pbh*pbc+pbmin));
     # Computing flow across Choke valvule
@@ -131,8 +119,6 @@ def EDO(x,u):
     F2lim=(0.0110894,0.0110894)
     qch_lim=(6.69674349099543e-5, 0.0020998116078856078)
     H_lim=(-11.492505101438962, 204.43014465827954)
-
-
     #Normalizing nonlinear terms
     ##########################
     qch=(qch-qch_lim[0])/qcc

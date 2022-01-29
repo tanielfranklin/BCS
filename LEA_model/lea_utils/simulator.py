@@ -11,7 +11,6 @@ from casadi import sum1,nlpsol,integrator
 from lea_utils import model as ED
 from lea_utils import PlotLEA,MLEA
 
-  
 class SimulatorLEA(object):
     def __init__(self,xss=np.array([[1.00000000e+05, 2.00000000e+05, 2.77777778e-05]])):
         self.xc,self.x0=norm_values()
@@ -28,14 +27,16 @@ class SimulatorLEA(object):
         dzc_max = 1;      # máxima variação em zc
         ## dxdt simbolicos
         dx1,dx2,dx3,pin,H=ED.EDO(self.x,self.u)
+        
         dxdt = csvertcat(dx1,dx2,dx3) 
         # dxdt = casadi.vertcat(dpbhdt,dpwhdt,dqdt) 
         self.Eq_Estado = Function('Eq_Estado',[self.x,self.u],[dxdt],
                             ['x','u'],['dxdt'])     
         #ny = y.size1()
         # Equações algébricas
-        self.sea_nl = Function('sea_nl',[self.x,self.u],[pin,H],
-                        ['x','u'],['pin','H']); # Sistema de Eq. Algebricas variaveis de sa�da 
+        y=csvertcat(pin,H)
+        self.sea_nl = Function('sea_nl',[self.x,self.u],[y.T],
+                        ['x','u'],['y']); # Sistema de Eq. Algebricas variaveis de sa�da 
 
     def getLEAdata(self,file_str,intervalo):
         self.BCS_EXP= MLEA(file_str,intervalo)

@@ -9,13 +9,20 @@ class MLEA(object):
         self.nsim=self.LEA['tempo']+1
         self.x=self.get_ss_values()
         self.u=self.get_exo_values()
+        self.y=self.get_y_values()
         self.tempo_hora = np.arange(0,self.nsim*self.ts,self.ts)/3600
         self.plotlea=PlotLEA()
-        self.plot_ss=self.plotlea.plot_states(self.x,self.tempo_hora)
+        self.plot_ss=self.plotlea.plot_states([self.x],self.tempo_hora)
         self.plot_u=self.plotlea.plot_exogenous(self.u,self.tempo_hora)
         plt.close(self.plot_ss)
         plt.close(self.plot_u)
-        
+
+    def get_y_values(self):
+        pin=self.LEA['pressao_intake']*1e5
+        H=self.LEA['nivel_intake']
+        return [pin,H]
+
+
     def get_exo_values(self):
         #Perturbações#######################################
         pman=self.LEA['pressao_manifold_coriolis']*1e5 

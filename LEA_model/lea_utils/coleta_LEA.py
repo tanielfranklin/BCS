@@ -8,8 +8,7 @@ import math
 def dados_exp_LEA(file_path,interval=np.array([0,np.inf])):
     interval=np.array([int(interval[0]*3600),int(interval[1]*3600)])
     #local do arquivo .mat do matlab coletado pelo experimento
-    #interval = define o subdominio de dados experimentais em horas a ser usado
-    
+    #interval = define o subdominio de dados experimentais em horas a ser usado 
     mat = scipy.io.loadmat(file_path) # Carrega os dados experimentais                                       
     Ts = 100;
     Tfim=len(mat['LEA_BCS_Instrumentacao'])
@@ -23,8 +22,6 @@ def dados_exp_LEA(file_path,interval=np.array([0,np.inf])):
     LEA_data = mat['LEA_BCS_Instrumentacao'][np.arange(Tinicio,Tfim,Ts),:]
     LEA={'tempo_coleta':np.arange(0,len(LEA_data))} # Constr�i um vetor de tempo equivalente ao tempo especificado
     LEA['tempo']=LEA['tempo_coleta'][-1]  # [s] Tempo de simula��o 
-    
-
     # # =========================================================================
     # #  Dados experimentais da instrumenta��o   
     # # =========================================================================
@@ -65,5 +62,3 @@ def dados_exp_LEA(file_path,interval=np.array([0,np.inf])):
     LEA.update(dados)
     LEA['nivel_intake_Baker']=(LEA['pressao_intake']*10**5)/(9.81*855)           # [m]    N�vel calculado com base na press�o de intake              
     return LEA
-# LEA=dados_LEA_Exp()
-# print(LEA['valvula_pneumatica_topo'])
