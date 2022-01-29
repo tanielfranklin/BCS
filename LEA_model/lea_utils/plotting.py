@@ -1,4 +1,5 @@
-from matplotlib import pyplot as plt  
+from matplotlib import pyplot as plt
+
 
 class PlotLEA(object):
     def __init__(self,ss_label=None,u_label=None,Experimental=None,Sim_result=None):
@@ -81,5 +82,8 @@ class PlotLEA(object):
         ax.set_xlabel('Time (h)')
         plt.legend(bbox_to_anchor=(1, 2.5), ncol = 2)
         return fig1
+    
+
+    
         
 

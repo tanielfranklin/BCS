@@ -1,6 +1,5 @@
-# from lea_utils import dados_exp_LEA, lim_norm
-# from matplotlib import pyplot as plt
 import numpy as np
+from tqdm.notebook import tqdm 
    
 from lea_utils import norm_values
 from casadi import MX,Function
@@ -12,13 +11,11 @@ from lea_utils import model as ED
 from lea_utils import PlotLEA,MLEA
 
 class SimulatorLEA(object):
-    def __init__(self,xss=np.array([[1.00000000e+05, 2.00000000e+05, 2.77777778e-05]])):
+    def __init__(self):
         self.xc,self.x0=norm_values()
         self.plotLEA = PlotLEA() 
         self.A=20
         self.BCS_EXP=None
-        xc,x0=norm_values()
-        self.xssn = (xss-x0)/xc
         self.nx = 3; self.nu = 4;
         self.x = MX.sym("x",self.nx); # Estados normalizados
         self.u = MX.sym("u",self.nu); # Entradas Exogenas
@@ -90,6 +87,39 @@ class SimulatorLEA(object):
         # Criacao do objeto para simulacao do BCS Eq de estado + Eq de Medicao
         Modelo_Predicao = Function('Modelo_Predicao',[self.x,self.u],[res['xf'].T],['xk_1','uk_1'],['xk'])
         return Modelo_Predicao
+
+    def simulate(self,uk_1,C_0):
+        #Input exogenous and initial values
+        xssn=C_0[0]
+        uss=C_0[1]
+        nsim=uk_1.shape[0]+1
+        ts=self.BCS_EXP.ts
+        print(ts)
+        #exogenous 
+        xssn=self.regime_estacionario()(xssn,uss) #valor inicial normalizado
+        xpk=self.PredictionModel(ts)(xssn,uss)
+        
+        xpks=xpk*self.xc+self.x0
+        #Inicialização do vetor de estados
+        Xk=xpks
+        #Inicialização do vetor de entradas exogenas
+        Uk= np.array(uss).reshape(1,4)
+        #Inicialização do vetor de saídas
+        Yk=self.sea_nl(xpk,uss)
+        
+
+        for k in tqdm(range(1,nsim)):
+            xpk = self.PredictionModel(ts)(xpk,uk_1[k:k+1,:])
+            print(xpk)
+            xpks=xpk*self.xc+self.x0
+            Yk = np.concatenate((Yk,self.sea_nl(xpk,uk_1[k:k+1,:])))
+            Xk = np.concatenate((Xk,xpks),axis=0) #desnormalizar x e preencher vetor
+            Uk = np.concatenate((Uk,uk_1[k:k+1,:]),axis=0)
+        Xk=[Xk[:,i] for i in range(3)]
+        Uk=[Uk[:,i] for i in range(4)]
+        Yk=[Yk[:,i] for i in range(2)]
+        return Xk,Uk,Yk
+    
 
 
 
