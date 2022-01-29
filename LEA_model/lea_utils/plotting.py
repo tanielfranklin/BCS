@@ -59,6 +59,7 @@ class PlotLEA(object):
                 ax1.set_xticklabels([])
             plt.grid(True)
         return fig3
+        
     def plot_y(self,tempo,y):
         
         fig1=plt.figure()
@@ -84,6 +85,27 @@ class PlotLEA(object):
         ax.set_xlabel('Time (h)')
         plt.legend(bbox_to_anchor=(1, 2.5), ncol = 2)
         return fig1
+    
+
+    # #exec(compile(open('envelope.py', "rb").read(), 'envelope.py', 'exec')) #% Roda arquivo com parâmetros do modelo BCS
+# fig4,ax4=plt.subplots()
+# plt.grid(True)
+# #BCS['Envelope']['fig'](ax4); # grafico do envelope
+# #
+# # Evolução dentro do envelope
+# ax4.plot(Xk[2,0:].T*3600,Yk[1,0:].T,'--k')
+# ax4.plot(Xk[2,0]*3600,Yk[1,0],'o')#,'MarkerFaceColor',[0,1,0],'MarkerEdgeColor',[0,0,0])
+# ax4.plot(Xk[2,-1]*3600,Yk[1,-1],'o')#,'MarkerFaceColor',[1,0,0],'MarkerEdgeColor',[0,0,0])
+# ax4.annotate('t=0',
+#              xy=(float(Xk[2,0]*3600),float(Yk[1,0])),
+#              xytext=(float(Xk[2,0]*3600)-5,float(Yk[1,0])+10),
+#              arrowprops=dict(facecolor='green', shrink=0.01))
+
+# ax4.annotate('t='+str(nsim),
+#              xy=(float(Xk[2,-1]*3600),float(Yk[1,-1])),
+#              xytext=(float(Xk[2,-1]*3600)-7,float(Yk[1,-1])+10),
+#              arrowprops=dict(facecolor='red', shrink=0.01))
+# plt.show()
     
 
     

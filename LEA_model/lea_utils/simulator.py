@@ -85,14 +85,14 @@ class SimulatorLEA(object):
         # objeto integrador
         res = int_odes(x0=self.x,p=self.u); #solução um passo a frente
         # Criacao do objeto para simulacao do BCS Eq de estado + Eq de Medicao
-        Modelo_Predicao = Function('Modelo_Predicao',[self.x,self.u],[res['xf'].T],['xk_1','uk_1'],['xk'])
+        Modelo_Predicao = Function('Modelo_Predicao',[self.x,self.u],[res['xf'].T],['xk_1','uk'],['xk'])
         return Modelo_Predicao
 
-    def simulate(self,uk_1,C_0):
+    def simulate(self,uk,C_0):
         #Input exogenous and initial values
         xssn=C_0[0]
         uss=C_0[1]
-        nsim=uk_1.shape[0]
+        nsim=uk.shape[0]
         ts=self.BCS_EXP.ts
         
         #exogenous 
@@ -106,13 +106,13 @@ class SimulatorLEA(object):
         #Inicialização do vetor de saídas
         Yk=self.sea_nl(xpk,uss)
         for k in tqdm(range(1,nsim)):
-            xpk = self.PredictionModel(ts)(xpk,uk_1[k:k+1,:])
+            xpk = self.PredictionModel(ts)(xpk,uk[k:k+1,:])
             
             xpks=xpk*self.xc+self.x0
             
-            Yk = np.concatenate((Yk,self.sea_nl(xpk,uk_1[k:k+1,:])))
+            Yk = np.concatenate((Yk,self.sea_nl(xpk,uk[k:k+1,:])))
             Xk = np.concatenate((Xk,xpks),axis=0) #desnormalizar x e preencher vetor
-            Uk = np.concatenate((Uk,uk_1[k:k+1,:]),axis=0)
+            Uk = np.concatenate((Uk,uk[k:k+1,:]),axis=0)
             
         Xk=[Xk[:,i] for i in range(3)]
         Uk=[Uk[:,i] for i in range(4)]
