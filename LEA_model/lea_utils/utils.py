@@ -92,4 +92,4 @@ def APRBS(a_range,b_range,nstep):
         k = b[i]
         prbs[k:] = a[i]
         i=i+1
-    return [random_signal, prbs]
+    return random_signal
