@@ -59,7 +59,7 @@ class PlotLEA(object):
                 ax1.set_xticklabels([])
             plt.grid(True)
         return fig3
-        
+
     def plot_y(self,tempo,y):
         
         fig1=plt.figure()
@@ -84,6 +84,7 @@ class PlotLEA(object):
         ax.legend();
         ax.set_xlabel('Time (h)')
         plt.legend(bbox_to_anchor=(1, 2.5), ncol = 2)
+        
         return fig1
     
 
