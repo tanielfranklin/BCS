@@ -31,10 +31,12 @@ class PlotLEA(object):
             raise ValueError("Invalid arguments for input:x (only len<=2")
         ###########################################
         fig3=plt.figure()
-        for i,var in enumerate(var):
+        for i,a in enumerate(var):
             ax1=fig3.add_subplot(len(self.ss_label),1,i+1)
-            ax1.plot(tempo ,var,"-k", label="simulated")
+            
+            ax1.plot(tempo ,a,"-k", label="simulated")
             if len(data)==2:
+                
                 ax1.plot(tempo ,var_exp[i],":b", label="ground true")
             ax1.set_ylabel(self.ss_label[i])
             if i+1!=len(data[0]):

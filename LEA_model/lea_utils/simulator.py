@@ -92,13 +92,12 @@ class SimulatorLEA(object):
         #Input exogenous and initial values
         xssn=C_0[0]
         uss=C_0[1]
-        nsim=uk_1.shape[0]+1
+        nsim=uk_1.shape[0]
         ts=self.BCS_EXP.ts
-        print(ts)
+        
         #exogenous 
         xssn=self.regime_estacionario()(xssn,uss) #valor inicial normalizado
         xpk=self.PredictionModel(ts)(xssn,uss)
-        
         xpks=xpk*self.xc+self.x0
         #Inicialização do vetor de estados
         Xk=xpks
@@ -106,18 +105,19 @@ class SimulatorLEA(object):
         Uk= np.array(uss).reshape(1,4)
         #Inicialização do vetor de saídas
         Yk=self.sea_nl(xpk,uss)
-        
-
         for k in tqdm(range(1,nsim)):
             xpk = self.PredictionModel(ts)(xpk,uk_1[k:k+1,:])
-            print(xpk)
+            
             xpks=xpk*self.xc+self.x0
+            
             Yk = np.concatenate((Yk,self.sea_nl(xpk,uk_1[k:k+1,:])))
             Xk = np.concatenate((Xk,xpks),axis=0) #desnormalizar x e preencher vetor
             Uk = np.concatenate((Uk,uk_1[k:k+1,:]),axis=0)
+            
         Xk=[Xk[:,i] for i in range(3)]
         Uk=[Uk[:,i] for i in range(4)]
         Yk=[Yk[:,i] for i in range(2)]
+        
         return Xk,Uk,Yk
     
 
