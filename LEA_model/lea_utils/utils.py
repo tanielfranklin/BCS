@@ -1,39 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-# def plot_exogenous(tempo,exo):
-#     label = ['f(Hz)','z(%)','Pman(bar)','Pr(bar)'];
-#     exo[2]=exo[2]/1e5
-#     exo[3]=exo[3]/1e5
-#     fig3=plt.figure()
-#     for i,var in enumerate(exo):
-#         ax1=fig3.add_subplot(len(label),1,i+1)
-#         ax1.plot(tempo ,var, label=label[i])
-#         # ax1.plot(tempo_hora ,output_signal/1e5, ':r')
-#         ax1.set_ylabel(label[i])
-#         if i+1!=len(exo):
-#             ax1.set_xticklabels([])
-#         plt.grid(True)
-#     return fig3
-# def plot_states(tempo,st):
-#     label = ['Pbh(bar)','Pwh(bar)','q(m3/h)'];
-#     ### Set Enginneering dimensions###########
-#     x_set_dim=[1/1e5,1/1e5,3600]
-#     var=[]
-#     for i,j in zip(st,x_set_dim ):
-#         var.append(i*j)   
-#     ###########################################
-
-#     fig3=plt.figure()
-#     for i,var in enumerate(var):
-#         ax1=fig3.add_subplot(len(label),1,i+1)
-#         ax1.plot(tempo ,var, label=label[i])
-#         ax1.set_ylabel(label[i])
-#         if i+1!=len(st):
-#             ax1.set_xticklabels([])
-#         plt.grid(True)
-#     return fig3
-
 def plot_states_double(tempo,ss,ss_exp):
     label = ['Pbh(bar)','Pwh(bar)','q(m3/h)'];
     ### Set Enginneering dimensions###########
@@ -93,3 +60,21 @@ def APRBS(a_range,b_range,nstep):
         prbs[k:] = a[i]
         i=i+1
     return random_signal
+
+
+def split_sequences(sequences, n_steps_in, n_steps_out):
+        #https://machinelearningmastery.com/how-to-develop-lstm-models-for-multi-step-time-series-forecasting-of-household-power-consumption/
+    X, y, u = list(), list(),list()
+    for i in range(len(sequences)):
+        # find the end of this pattern
+        end_ix = i + n_steps_in
+        out_end_ix = end_ix + n_steps_out-1
+        # check if we are beyond the dataset
+        if out_end_ix > len(sequences)-1:
+            break
+        # gather input and output parts of the pattern
+        seq_x, seq_y, seq_u= sequences[i:end_ix, :], sequences[end_ix:out_end_ix+1, :],sequences[end_ix-1:out_end_ix, :]
+        X.append(seq_x)
+        y.append(seq_y)
+        u.append(seq_u)
+    return np.array(X), np.array(y), np.array(u)# choose a number of time steps #change this accordingly
