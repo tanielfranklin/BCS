@@ -55,9 +55,9 @@ class PlotLEA(object):
         return fig3
 
     def plot_exogenous(self,exo,tempo):
-        var=[a * b for a, b in zip(exo,self.u_scale)]
+        var_exo=[a * b for a, b in zip(exo,self.u_scale)]
         fig3=plt.figure()
-        for i,var in enumerate(exo):
+        for i,var in enumerate(var_exo):
             ax1=fig3.add_subplot(len(self.u_label),1,i+1)
             ax1.plot(tempo ,var, label=self.u_label[i])
             # ax1.plot(tempo_hora ,output_signal/1e5, ':r')
