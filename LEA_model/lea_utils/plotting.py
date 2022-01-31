@@ -6,6 +6,8 @@ class PlotLEA(object):
         self.ss_label=['Pbh(bar)','Pwh(bar)','q(m3/h)'];
         self.u_label=['f(Hz)','z(%)','Pman(bar)','Pr(bar)'];
         self.y_label = [r'$p_{in}(bar)$','H(m)'];
+        self.u_scale=[1,1,1/1e5,1/1e5]
+        self.ss_scale=[1/1e5,1/1e5,3600]
         self.BCS=Experimental
         self.sim=Sim_result
     
@@ -17,16 +19,22 @@ class PlotLEA(object):
         self.y_label=label_str
     def update_label_u(self,label_str):
         #string list with four elements
-        self.ss_label=label_str
+        self.u_label=label_str
+    def update_scale_u(self,scale_list):
+        #string list with four elements
+        self.u_scale=scale_list
+    def update_scale_ss(self,label_list):
+        #string list with three elements
+        self.ss_scale=label_list
 
     def plot_states(self,data,tempo):                
         ### Set Enginneering dimensions###########
-        x_set_dim=[1/1e5,1/1e5,3600]
+        
         if len(data)==1:
-            var=[a * b for a, b in zip(data[0],x_set_dim )]
+            var=[a * b for a, b in zip(data[0],self.ss_scale )]
         elif len(data)==2:
-            var=[a * b for a, b in zip(data[0],x_set_dim )]
-            var_exp=[a * b for a, b in zip(data[1],x_set_dim )]
+            var=[a * b for a, b in zip(data[0],self.ss_scale)]
+            var_exp=[a * b for a, b in zip(data[1],self.ss_scale)]
         else:
             raise ValueError("Invalid arguments for input:x (only len<=2")
         ###########################################
@@ -47,8 +55,7 @@ class PlotLEA(object):
         return fig3
 
     def plot_exogenous(self,exo,tempo):
-        exo[2]=exo[2]/1e5
-        exo[3]=exo[3]/1e5
+        var=[a * b for a, b in zip(exo,self.u_scale)]
         fig3=plt.figure()
         for i,var in enumerate(exo):
             ax1=fig3.add_subplot(len(self.u_label),1,i+1)
