@@ -1,4 +1,5 @@
-from lea_pinn import ODE_LEA
+# from lea_pinn import ODE_LEA
+import tensorflow as tf
 
 class PhysicsInformedNN(object):
     #Define the Constructor
