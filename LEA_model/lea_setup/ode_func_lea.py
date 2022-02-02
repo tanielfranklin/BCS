@@ -1,14 +1,42 @@
+import tensorflow as tf
+import math
+import numpy as np
+#@tf.function
+def dydt(y_pred,ts):
+    #Central 4 pontos
+    y = y_pred
+    n=y.shape[1]
+    try:
+        if n<6:
+            raise Exception("Model output size must have at least 6 time-steps ")          
+    except Exception as inst:
+        print(inst.args)
+        raise
+    #Progressiva e regressiva 3 pontos
+    pro3=tf.constant([[-3,4,-1]],dtype=tf.float32)/(2*ts)
+    reg3=tf.constant([[1,-4,3]],dtype=tf.float32)/(2*ts)
+    d1=tf.matmul(pro3,y_pred[:,0:3,:])
+    dn=tf.matmul(reg3,y_pred[:,-3:,:])
+    #Central 2 pontos
+    dc=(y_pred[:,2:n,:]-y_pred[:,0:n-2,:])/(2*ts)        
+    return tf.concat([d1,dc,dn],axis=1)
+
+@tf.function
 def ODE_LEA(x,u,var):
     rho=var[0]
     PI=var[1]
+
     pi=3.141592653589793
     ddy=dydt(x,tf.constant(1.0,dtype=tf.float32))
+    #ddy=np.zeros_like(x)
     pbh = x[:,:,0:1];pwh = x[:,:,1:2]; q = x[:,:,2:] #Vazão
     ### A entrada da rede exige entradas normalizadas o cálculo dos resíduos não
     fq=u[:,:,:1] *60  # desnormalizar para EDO
-    zc=u[:,:,1:2]*100 # desnormalizar para EDO
-    pmn=u[:,:,2:3] #  pressão de manifold normalizada
-    prn=u[:,:,3:] # pressão de reservatório normalizada
+    zc=u[:,:,1:2]*100 #  desnormalizar para EDO
+    pm=pwh-u[:,:,2:3]*(25*1e5) # remember that pmn=(x2-pman)/(25*1e5) - pressão de manifold normalizada
+    pr=u[:,:,3:]*0.4e5+1.75e5 # remember that prn=(pres-1.75e5)/0.4e5 pressão de reservatório normalizada
+
+
 
     def Lim_c(x):
         return x[1]-x[0]
@@ -36,13 +64,13 @@ def ODE_LEA(x,u,var):
     # Pnp = 13422.5982;# ESP motor nominal Power [W]
     b1 = 1.8e9;   # Bulk modulus below ESP [Pa]
     b2 = 1.8e9;   # Bulk modulus above ESP [Pa]
-    # rho = 836.8898;
+    rho = 836.8898;
     # # Anular = 0.033595; 
-    # rho_1 = 836.8898;    # Density of produced fluid [kg/m�?³]
-    # rho_2 = 836.8898;
+    rho_1 = 836.8898;    # Density of produced fluid [kg/m�?³]
+    rho_2 = 836.8898;
     #pr = 2.1788e5;  # Reservoir pressure 
     #pm = 1.3394e+04;  # manifold pressure
-    # PI = 2.7e-8; # Well production index [m3/s/Pa]
+    PI = 2.7e-8; # Well production index [m3/s/Pa]
     mu  = 0.012;  # Viscosity [Pa*s]
     # dfq_max = 0.5;    # m�xima varia��o em f/s
     # dzc_max = 1;  # m�xima varia��o em zc #/s
@@ -108,7 +136,7 @@ def ODE_LEA(x,u,var):
     # Computing Reservoir flow
     qr = PI * (pr - (pbh*pbc+pbmin));
     # Computing flow across Choke valvule
-    qch = Cc * (zc) * csqrt(fabs(pwh*pwc+pwmin - pm));
+    qch = Cc * (zc) * tf.sqrt(tf.abs(pwh*pwc+pwmin - pm));
     #============================================
     F1c=2.92634e-05
     F2c=0.000738599

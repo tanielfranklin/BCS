@@ -92,6 +92,7 @@ def EDO(x,u):
     #=============================================
     # Computing HEAD and pump pressure gain of LEA
     q0 = (qc*q+qmin) / Cq * (f0 / fq)
+    print(f"qo={q0}")
     H0 =  Head[0]*q0**4 +  Head[1]*q0**3 +  Head[2]*q0**2 + Head[3]*q0 + Head[4];
     H = CH * H0 * (fq / f0) ** 2  # Head
     Pp = rho * g * H  # Dp

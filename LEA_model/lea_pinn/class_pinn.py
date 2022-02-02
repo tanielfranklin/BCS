@@ -1,31 +1,47 @@
 # from lea_pinn import ODE_LEA
 import tensorflow as tf
+from tensorflow import keras
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.layers import LSTM
+from keras.layers import Dropout
+from keras.layers import TimeDistributed
+from keras.layers import RepeatVector
+from lea_pinn import TrainState,LossHistory,VarHistory#,get_abs_mean_grad,get_abs_max_grad
+from lea_setup import *
+import numpy as np
+
+
+
 
 class PhysicsInformedNN(object):
     #Define the Constructor
-    def __init__(self,neurons, optimizer, logger,  var=None, pinn_mode=1, inputs=2):
+    def __init__(self,neurons,N_in,N_out, optimizer,data_test, logger,  var=None, pinn_mode=1, inputs=2):
+    #N_in,N_out define time-steps in and out of the network
     # Descriptive Keras model LSTM model
         self.u_model = Sequential()
-        self.batch_size=batch_size
-        self.train_state = TrainState()
+        self.var=[1,1]
+        
         self.inputs=inputs #input states
         n_features=inputs
         # encoder layer
-        self.u_model.add(LSTM(neurons, input_shape=(n_steps_in, inputs)))
+        self.u_model.add(LSTM(neurons, input_shape=(N_in,inputs)))
         self.u_model.add(Dropout(0.2))
-        self.u_model.add(RepeatVector(n_steps_out))
+        self.u_model.add(RepeatVector(N_out))
         # decoder layer
         self.u_model.add(LSTM(neurons, return_sequences=True))
         self.u_model.add(Dropout(0.2))  
         self.u_model.add(TimeDistributed(Dense(3)))#,input_shape=(n_steps_out, 2)))
-        output_start=self.u_model.predict(tf.random.normal(shape=(1,n_steps_in,inputs),dtype=tf.float32)) # forçar o inicio dos parâmetros do modelo
         
+        output_start=self.u_model.predict(tf.random.normal(shape=(1,N_in,inputs),dtype=tf.float32)) # forçar o inicio dos parâmetros do modelo
+        self.train_state = TrainState()
 
         self.bestWeights=self.u_model.get_weights()
         self.bestLoss=np.inf
         self.optimizer = optimizer   
         self.logger = logger
         self.dtype = tf.float32
+        self.test_X,self.test_y=data_test
         
         #self.Loss_Weight_pinn=loss_weight_pinn
         self.alfa=tf.constant(0.8, dtype=tf.float32)
@@ -34,6 +50,7 @@ class PhysicsInformedNN(object):
         self.lamb_l2=tf.constant(1.0, dtype=tf.float32)
         self.lamb_l3=tf.constant(1.0, dtype=tf.float32)
         self.pinn_mode=1
+        self.ODE=ODE_LEA
     
         self.pinn_mode_set(pinn_mode)
 
@@ -237,71 +254,71 @@ class PhysicsInformedNN(object):
         return f
     @tf.function
     def erro(self): 
-        y_pred = self.u_model(test_X)
-        yr=test_y
+        y_pred = self.u_model(self.test_X)
+        yr=self.test_y
         #erro=tf.sqrt((yr[:,-1,:] - y_pred[:,-1,:])**2)
         erro=tf.square(yr[:,:,:] - y_pred[:,:,0:2])
         return tf.reduce_mean(erro)
 
-    @tf.function
-    def ED_BCS(self,x,u):
-        var=[self.rho, self.PI]
-        #init=time.time()
-        ddy=dydt(x,tf.constant(1.0,dtype=tf.float32))
-        #print("Discrete derivative",time.time()-init)
-        ## Montado o sistema de equacoes
-        # Tensores (Estados)
-        #dx=(x[:,1:,:]-x[:,:-1,:])/ts        
-        # Tensores (Estados atuais preditos)
-        pbh = x[:,:,0:1]
-        pwh = x[:,:,1:2]
-        q = x[:,:,2:] #Vazão
-        #q=tf.clip_by_value(q,0,100)
-        #Valores passados de x
-        # pbhk = xk[:,0:1]
-        # pwhk = xk[:,1:2]
-        # qk = xk[:,2:] #Vazão
-        #Entradas exógenas atuais
-        ### A entrada da rede exige entradas normalizadas o cálculo dos resíduos não
-        fq=u[:,:,:1] *60  # desnormalizar para EDO
-        zc=u[:,:,1:2]*100 # desnormalizar para EDO
-        pmn=u[:,:,2:]
+    # @tf.function
+    # def ED_BCS(self,x,u):
+    #     var=[self.rho, self.PI]
+    #     #init=time.time()
+    #     ddy=dydt(x,tf.constant(1.0,dtype=tf.float32))
+    #     #print("Discrete derivative",time.time()-init)
+    #     ## Montado o sistema de equacoes
+    #     # Tensores (Estados)
+    #     #dx=(x[:,1:,:]-x[:,:-1,:])/ts        
+    #     # Tensores (Estados atuais preditos)
+    #     pbh = x[:,:,0:1]
+    #     pwh = x[:,:,1:2]
+    #     q = x[:,:,2:] #Vazão
+    #     #q=tf.clip_by_value(q,0,100)
+    #     #Valores passados de x
+    #     # pbhk = xk[:,0:1]
+    #     # pwhk = xk[:,1:2]
+    #     # qk = xk[:,2:] #Vazão
+    #     #Entradas exógenas atuais
+    #     ### A entrada da rede exige entradas normalizadas o cálculo dos resíduos não
+    #     fq=u[:,:,:1] *60  # desnormalizar para EDO
+    #     zc=u[:,:,1:2]*100 # desnormalizar para EDO
+    #     pmn=u[:,:,2:]
 
-        # Calculo do HEAD e delta de press�o
+    #     # Calculo do HEAD e delta de press�o
         
-        q0 = (q*qc+qmin) / Cq * (f0 / fq)
-        H0 = -1.2454e6 * q0 ** 2.0 + 7.4959e3 * q0 + 9.5970e2
-        H = CH * H0 * (fq / f0) ** 2.0  # Head
-        F1 = 0.158 * ((var[0]*rho* L1 * ((q*qc+qmin)) ** 2.0) / (D1 * A1 ** 2.0)) * (mu / (var[0]*rho* D1 * ((q*qc+qmin)))) ** (1.0/4.0)
-        F2 = 0.158 * ((var[0]*rho * L2 * ((q*qc+qmin)) ** 2.0) / (D2 * A2 ** 2.0)) * (mu / (var[0]*rho* D2 * ((q*qc+qmin)))) ** (1.0/4.0)
-        qr = var[1]*PI * (pr - (pbh*pbc+pbmin))
-        qch = (zc/100.0)*Cc * tf.sqrt(kn)*tf.sqrt(tf.abs(pmn));
-        ##########################
-        qch=(qch-qch_lim[0])/qcc
-        F1=(F1-F1lim[0])/F1c
-        F2=(F2-F2lim[0])/F2c
-        H=(H-H_lim[0])/Hc
-        ###########################
+    #     q0 = (q*qc+qmin) / Cq * (f0 / fq)
+    #     H0 = -1.2454e6 * q0 ** 2.0 + 7.4959e3 * q0 + 9.5970e2
+    #     H = CH * H0 * (fq / f0) ** 2.0  # Head
+    #     F1 = 0.158 * ((var[0]*rho* L1 * ((q*qc+qmin)) ** 2.0) / (D1 * A1 ** 2.0)) * (mu / (var[0]*rho* D1 * ((q*qc+qmin)))) ** (1.0/4.0)
+    #     F2 = 0.158 * ((var[0]*rho * L2 * ((q*qc+qmin)) ** 2.0) / (D2 * A2 ** 2.0)) * (mu / (var[0]*rho* D2 * ((q*qc+qmin)))) ** (1.0/4.0)
+    #     qr = var[1]*PI * (pr - (pbh*pbc+pbmin))
+    #     qch = (zc/100.0)*Cc * tf.sqrt(kn)*tf.sqrt(tf.abs(pmn));
+    #     ##########################
+    #     qch=(qch-qch_lim[0])/qcc
+    #     F1=(F1-F1lim[0])/F1c
+    #     F2=(F2-F2lim[0])/F2c
+    #     H=(H-H_lim[0])/Hc
+    #     ###########################
 
-        # print('#############')
-        # print(tf.reduce_mean(tf.square(H)))
-        # print(tf.reduce_mean(tf.square(F1)))
-        # print(tf.reduce_mean(tf.square(F2)))
-        # print(tf.reduce_mean(tf.square(pbh*pbc+pbmin - (pwh*pwc+pwmin) - rho*g*hw)))
-        # print(tf.reduce_mean(- (1/(qc*M))*(pbh*pbc+pbmin - (pwh*pwc+pwmin) - rho*g*hw - (F1c*F1+F1lim[0]) - (F2c*F2+F2lim[0]) +  rho* g * (H*Hc+H_lim[0]))))
-        # print(tf.reduce_mean(tf.square(dx[:,:,2:])))
-        # print('#############')
-        #return pbh,pwh  # - (1/(qc*M))*(pbh*pbc+pbmin - (pwh*pwc+pwmin) - rho*g*hw - (F1c*F1+F1lim[0]) - (F2c*F2+F2lim[0]) +  rho* g * (H*Hc+H_lim[0]))
+    #     # print('#############')
+    #     # print(tf.reduce_mean(tf.square(H)))
+    #     # print(tf.reduce_mean(tf.square(F1)))
+    #     # print(tf.reduce_mean(tf.square(F2)))
+    #     # print(tf.reduce_mean(tf.square(pbh*pbc+pbmin - (pwh*pwc+pwmin) - rho*g*hw)))
+    #     # print(tf.reduce_mean(- (1/(qc*M))*(pbh*pbc+pbmin - (pwh*pwc+pwmin) - rho*g*hw - (F1c*F1+F1lim[0]) - (F2c*F2+F2lim[0]) +  rho* g * (H*Hc+H_lim[0]))))
+    #     # print(tf.reduce_mean(tf.square(dx[:,:,2:])))
+    #     # print('#############')
+    #     #return pbh,pwh  # - (1/(qc*M))*(pbh*pbc+pbmin - (pwh*pwc+pwmin) - rho*g*hw - (F1c*F1+F1lim[0]) - (F2c*F2+F2lim[0]) +  rho* g * (H*Hc+H_lim[0]))
 
-        # res1=dx[:,:,0:1] - (1/pbc)*b1/V1*(qr - (q*qc+qmin))
-        # res2=dx[:,:,1:2] - (1/pwc)*b2/V2*((q*qc+qmin) - (qcc*qch+qch_lim[0]))
-        # res3=dx[:,:,2:] - (1/(qc*M))*(pbh*pbc+pbmin - (pwh*pwc+pwmin) - self.rho*rho*g*hw - (F1c*F1+F1lim[0]) - (F2c*F2+F2lim[0]) +  self.rho*rho* g * (H*Hc+H_lim[0])) 
-        # return tf.reduce_mean(tf.square(res1)), tf.reduce_mean(tf.square(res2)), tf.reduce_mean(tf.square(res3))
+    #     # res1=dx[:,:,0:1] - (1/pbc)*b1/V1*(qr - (q*qc+qmin))
+    #     # res2=dx[:,:,1:2] - (1/pwc)*b2/V2*((q*qc+qmin) - (qcc*qch+qch_lim[0]))
+    #     # res3=dx[:,:,2:] - (1/(qc*M))*(pbh*pbc+pbmin - (pwh*pwc+pwmin) - self.rho*rho*g*hw - (F1c*F1+F1lim[0]) - (F2c*F2+F2lim[0]) +  self.rho*rho* g * (H*Hc+H_lim[0])) 
+    #     # return tf.reduce_mean(tf.square(res1)), tf.reduce_mean(tf.square(res2)), tf.reduce_mean(tf.square(res3))
 
-        dy1=- (1/pbc)*b1/V1*(qr - (q*qc+qmin))
-        dy2=- (1/pwc)*b2/V2*((q*qc+qmin) - (qcc*qch+qch_lim[0]))
-        dy3=- (1/(qc*M))*(pbh*pbc+pbmin - (pwh*pwc+pwmin) - var[0]*rho*g*hw - (F1c*F1+F1lim[0]) - (F2c*F2+F2lim[0]) +  var[0]*rho* g * (H*Hc+H_lim[0]))
-        return tf.reduce_mean(tf.square(ddy[:,:,0:1]+dy1)), tf.reduce_mean(tf.square(ddy[:,:,1:2]+dy2)), tf.reduce_mean(tf.square(ddy[:,:,2:]+dy3))
+    #     dy1=- (1/pbc)*b1/V1*(qr - (q*qc+qmin))
+    #     dy2=- (1/pwc)*b2/V2*((q*qc+qmin) - (qcc*qch+qch_lim[0]))
+    #     dy3=- (1/(qc*M))*(pbh*pbc+pbmin - (pwh*pwc+pwmin) - var[0]*rho*g*hw - (F1c*F1+F1lim[0]) - (F2c*F2+F2lim[0]) +  var[0]*rho* g * (H*Hc+H_lim[0]))
+    #     return tf.reduce_mean(tf.square(ddy[:,:,0:1]+dy1)), tf.reduce_mean(tf.square(ddy[:,:,1:2]+dy2)), tf.reduce_mean(tf.square(ddy[:,:,2:]+dy3))
 
 
 
@@ -316,12 +333,12 @@ class PhysicsInformedNN(object):
         loss_obs=tf.reduce_mean(tf.square(y - ysliced))
         if self.pinn_mode==1 or self.pinn_mode==2:
             #computing the residues with predicted states
-            r1,r2,r3=self.ED_BCS(y_pred,u)
+            r1,r2,r3=self.ODE(y_pred,u,self.var)
         else:
             r1,r2,r3=tf.constant(0.0, dtype=tf.float32),tf.constant(0.0, dtype=tf.float32),tf.constant(0.0, dtype=tf.float32)
         if self.pinn_mode==2 or self.pinn_mode==3:
             #Using measured Pbh and Pwh to compute the residues
-            R1,R2,R3=self.ED_BCS(tf.concat([y[:,:,0:2],y_pred[:,:,2:]],axis=2),u)
+            R1,R2,R3=self.ODE(tf.concat([y[:,:,0:2],y_pred[:,:,2:]],axis=2),u,self.var)
         else:
             R1,R2,R3=tf.constant(0.0, dtype=tf.float32),tf.constant(0.0, dtype=tf.float32),tf.constant(0.0, dtype=tf.float32)
         return loss_obs,r1,r2,r3,(r1+r2+r3),R1,R2,R3
