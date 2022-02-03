@@ -1,5 +1,7 @@
 # from lea_pinn import ODE_LEA
 import tensorflow as tf
+import tensorflow_probability as tfp
+import time
 from tensorflow import keras
 from keras.models import Sequential
 from keras.layers import Dense
@@ -10,8 +12,6 @@ from keras.layers import RepeatVector
 from lea_pinn import TrainState,LossHistory,VarHistory#,get_abs_mean_grad,get_abs_max_grad
 from lea_setup import *
 import numpy as np
-
-
 
 
 class PhysicsInformedNN(object):
@@ -166,6 +166,8 @@ class PhysicsInformedNN(object):
             Returns:
                 A scalar loss and the gradients w.r.t. the `params_1d`.
             """
+            rho = 836.8898;
+            PI = 2.7e-8;
 
             # use GradientTape so that we can calculate the gradient of loss w.r.t. parameters
             with tf.GradientTape() as tape:
@@ -400,9 +402,9 @@ class PhysicsInformedNN(object):
     #@tf.function
     def wrap_training_variables(self):
         var = self.u_model.trainable_weights
-        if self.pinn_mode!=0:
-            var.extend([self.rho])
-            var.extend([self.PI])
+        # if self.pinn_mode!=0:
+        #     var.extend([self.rho])
+        #     var.extend([self.PI])
         #var.extend([self.rho, self.PI])
         
         return  var
@@ -435,6 +437,8 @@ class PhysicsInformedNN(object):
                                                                             train_X,train_y, u_train)
         self.logger.log_train_opt("Adam",self.pinn_mode,self.get_lamb_weights())
         self.logger.start_time=time.time()
+        rho = 836.8898;
+        PI = 2.7e-8;
 
 
         
@@ -525,6 +529,8 @@ class PhysicsInformedNN(object):
 
     def fit_LBFGS(self, train_x,train_y, u_train, nt_config):
         #self.logger.log_train_start(self)
+        rho = 836.8898;
+        PI = 2.7e-8;
         
         self.logger.log_train_opt("LBFGS",self.pinn_mode,self.get_lamb_weights())
         self.logger.start_time=time.time()

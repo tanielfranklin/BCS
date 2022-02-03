@@ -1,5 +1,6 @@
 import tensorflow as tf
 import time
+from datetime import datetime
 import numpy as np
 class Logger(object):
   def __init__(self, frequency=10):

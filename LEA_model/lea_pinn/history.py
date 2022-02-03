@@ -1,3 +1,6 @@
+from matplotlib import pyplot as plt
+import numpy as np
+from matplotlib.legend import Legend
 class LossHistory(object):
     def __init__(self):
         self.steps = []
@@ -57,6 +60,7 @@ class LossHistory(object):
         #         label="Test metric",
         #     )
         plt.xlabel("Steps",fontsize=self.Font)
+        plt.grid()
         plt.legend(bbox_to_anchor=(0.9, -0.15), ncol = 4)
     def plot_loss(self):
         # loss_train = np.sum(losshistory.loss_train, axis=0)
