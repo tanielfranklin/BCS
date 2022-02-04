@@ -93,6 +93,37 @@ class PlotLEA(object):
         plt.legend(bbox_to_anchor=(1, 2.5), ncol = 2)
         
         return fig1
+
+    def plot_test(pred_test, obs, u_test,step):
+        Font=14
+        pred_test=pred_test[:,step,:]*xc+x0
+        obs=obs[:,step,:]
+        k=np.arange(0,561)/60
+        Fig=plt.figure(figsize=(8, 8))
+        sc=[1/1e5, 1/1e5,3600]
+        sc_u=[1, 1,1/1e5]
+        label=["$P_{bh}(bar)$","$P_{wh}(bar)$", "$q (m^3/h)$"]
+        label_u = ['f(Hz)',r'$z_c$(%)', "$p_{man} (bar)$"];
+        for i,lb in enumerate(label):        
+            ax1=Fig.add_subplot(len(label+label_u),1,i+1)
+            ax1.plot(k, obs[:,i]*sc[i],"-k", label='GroundTruth')
+            ax1.plot(k, pred_test[:,i]*sc[i],":",color='blue',lw=2,label='Predicted')
+            ax1.set_ylabel(lb,  fontsize=Font)
+            ax1.set_xticklabels([])
+            
+            ax1.grid(True)
+        plt.legend()
+        for i,lb in enumerate(label_u):
+            ax1=Fig.add_subplot(len(label+label_u),1,i+1+3)
+            ax1.plot(k, u_test[:,i]*sc_u[i],"-k")
+            ax1.set_ylabel(lb,  fontsize=Font)
+            ax1.grid(True)
+            if i!=2:
+                ax1.set_xticklabels([])
+        ax1.set_xlabel('$Time (min)$' ,  fontsize=Font)
+        #plt.legend(bbox_to_anchor=(1, 3.8), ncol = 3)
+        plt.legend()
+        return Fig
     
 
     # #exec(compile(open('envelope.py', "rb").read(), 'envelope.py', 'exec')) #% Roda arquivo com parâmetros do modelo BCS

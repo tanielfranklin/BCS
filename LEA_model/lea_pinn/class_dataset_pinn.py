@@ -1,15 +1,21 @@
 import numpy as np
+import tensorflow as tf
 
 class Dataset_Pinn(object):
     def __init__(self,dset,normx,normu,tsteps):
-         self.remove_q=True        
-         self.xc,self.x0=normx
-         self.uc,self.u0=normu
-         self.t_steps=tsteps
-         self.N=dset[0].shape[0]
-         self.data=self._dset_reshape(dset)
-         self.xn=self._x_norm()
-         self.un=self._u_norm()
+        self.remove_q=True        
+        self.xc,self.x0=normx
+        self.uc,self.u0=normu
+        self.t_steps=tsteps
+        self.N=dset[0].shape[0]
+        self.data=self._dset_reshape(dset)
+        self.xn=self._x_norm()
+        self.un=self._u_norm()
+        self.X,self.Y,self.U=self._DataSequence()
+        n_features=6 # two network inputs  (fk, zc,pmc,prn, x1,x2)
+        nu=4 #number of exogenous
+        n_measured=2 # number of measured states
+        self.dataset_LBFGS, self.dataset_ADAM = self._split_train_test()
 
     def _dset_reshape(self,dset):
         data=[np.reshape(i,(self.N,1)) for i in dset]
@@ -53,33 +59,48 @@ class Dataset_Pinn(object):
             
         return X_train,y_train,u_train
 
-    def _data_train(self):
-        n_steps_in, n_steps_out = 30 ,10# convert into input/output
-        a, b,c= self._split_sequences(self.data, n_steps_in, n_steps_out)
+    def _DataSequence(self):
+        n_steps_in, n_steps_out = self.t_steps# convert into input/output
+        a, b,c= self._split_sequences()
         X=a[:,:,:]
-        y=b[:,:,-3:]
-        u_train=b[:,:,0:4]
+        Y=b[:,:,-3:]
+        U=b[:,:,0:4]
+        return X,Y,U
 
-    def split_train_test(self):
+    def _split_train_test(self):
+        def ToTensor(x):
+            return tf.convert_to_tensor(x, dtype=tf.float32)
         # Create train and test sets
         dset=self.data
         split_point = int(0.7*dset.shape[0]) # catch 70% for training
-        X,y,u_train=self._split_sequences()
-        train_X_full , train_y_full, u_train = X[:split_point, :] , y[:split_point, :], u_train[:split_point, :]
-        test_X_full , test_y_full = X[split_point:, :] , y[split_point:, :]
-        uk=dset[0:split_point,0:4]
+        train_X_full , train_y_full, u_train = self.X[:split_point, :] , ToTensor(self.Y[:split_point, :]), ToTensor(self.U[:split_point, :])
+        test_X_full , test_y_full = self.X[split_point:, :] , self.Y[split_point:, :]
+        uk=ToTensor(dset[0:split_point,0:4])
         if self.remove_q==True:
             # Remove last state (q) unmeasured
-            train_y=train_y_full[:,:,0:2]
-            train_X=train_X_full[:,:,:-1]
-            test_y=test_y_full[:,:,0:2]
-            test_X=test_X_full[:,:,:-1]
+            train_y=ToTensor(train_y_full[:,:,0:2])
+            train_X=ToTensor(train_X_full[:,:,:-1])
+            test_y=ToTensor(test_y_full[:,:,0:2])
+            test_X=ToTensor(test_X_full[:,:,:-1])
         else:
             # Remove last state (q) unmeasured
-            train_y=train_y_full
-            train_X=train_X_full
-            test_y=test_y_full
-            test_X=test_X_full
+            train_y=ToTensor(train_y_full)
+            train_X=ToTensor(train_X_full)
+            test_y=ToTensor(test_y_full)
+            test_X=ToTensor(test_X_full)
+        
+
+           
+        train_dataset = tf.data.Dataset.from_tensor_slices((train_X,train_y, u_train))
+        batch_size=30
+        train_dataset = train_dataset.batch(batch_size)
+        train_X.shape
+        data_LBFGS=[train_X,train_y,u_train]
+        data_ADAM = train_dataset
+        return data_LBFGS, data_ADAM
+        
+        
+        
 
 
 

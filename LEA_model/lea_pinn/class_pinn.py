@@ -527,8 +527,10 @@ class PhysicsInformedNN(object):
 
         
 
-    def fit_LBFGS(self, train_x,train_y, u_train, nt_config):
+    def fit_LBFGS(self, dataset, nt_config):
         #self.logger.log_train_start(self)
+        train_x,train_y, u_train = dataset
+
         rho = 836.8898;
         PI = 2.7e-8;
         
