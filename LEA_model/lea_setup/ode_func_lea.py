@@ -31,10 +31,15 @@ def ODE_LEA(x,u,var):
     #ddy=np.zeros_like(x)
     pbh = x[:,:,0:1];pwh = x[:,:,1:2]; q = x[:,:,2:] #Vazão
     ### A entrada da rede exige entradas normalizadas o cálculo dos resíduos não
-    fq=u[:,:,:1] *60  # desnormalizar para EDO
-    zc=u[:,:,1:2]*100 #  desnormalizar para EDO
-    pm=pwh-u[:,:,2:3]*(25*1e5) # remember that pmn=(x2-pman)/(25*1e5) - pressão de manifold normalizada
-    pr=u[:,:,3:]*0.4e5+1.75e5 # remember that prn=(pres-1.75e5)/0.4e5 pressão de reservatório normalizada
+    # fq=u[:,:,:1] *60  # desnormalizar para EDO
+    # zc=u[:,:,1:2]*100 #  desnormalizar para EDO
+    # pm=pwh-u[:,:,2:3]*(25*1e5) # remember that pmn=(x2-pman)/(25*1e5) - pressão de manifold normalizada
+    # pr=u[:,:,3:]*0.4e5+1.75e5 # remember that prn=(pres-1.75e5)/0.4e5 pressão de reservatório normalizada
+    fq=u[:,:,:1]  
+    zc=u[:,:,1:2] 
+    pm=u[:,:,2:3] 
+    pr=u[:,:,3:] 
+    
 
 
 

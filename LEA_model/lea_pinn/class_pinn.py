@@ -16,9 +16,10 @@ import numpy as np
 
 class PhysicsInformedNN(object):
     #Define the Constructor
-    def __init__(self,neurons,N_in,N_out, optimizer,data_test, logger,  var=None, pinn_mode=1, inputs=2):
+    def __init__(self,neurons,tsteps, optimizer, logger,  var=None, pinn_mode=1, inputs=2):
     #N_in,N_out define time-steps in and out of the network
     # Descriptive Keras model LSTM model
+        N_in,N_out=tsteps
         self.u_model = Sequential()
         self.var=[1,1]
         
@@ -41,7 +42,7 @@ class PhysicsInformedNN(object):
         self.optimizer = optimizer   
         self.logger = logger
         self.dtype = tf.float32
-        self.test_X,self.test_y=data_test
+        # self.test_X,self.test_y=data_test
         
         #self.Loss_Weight_pinn=loss_weight_pinn
         self.alfa=tf.constant(0.8, dtype=tf.float32)
@@ -64,9 +65,9 @@ class PhysicsInformedNN(object):
 
 
 
-        self.error_fn=self.erro()
+        # self.error_fn=self.erro()
         self.Font=14   
-        self.logger.set_error_fn(self.erro)
+        # self.logger.set_error_fn(self.erro)
         self.losshistory = LossHistory() 
         self.varhistory = VarHistory()
         self.nsess=0 
@@ -75,8 +76,8 @@ class PhysicsInformedNN(object):
     
     def get_lamb_weights(self):   
         l1=f"[{self.lamb_bc.numpy():4.3f},{self.lamb_l1.numpy():4.3f},{self.lamb_l2.numpy():4.3f},{self.lamb_l3.numpy():4.3f},"
-        l2=f"{self.lamb_l1.numpy():4.3f},{self.lamb_l2.numpy():4.3f},{self.lamb_l3.numpy():4.3f}]"
-        return l1+l2
+        #l2=f"{self.lamb_l1.numpy():4.3f},{self.lamb_l2.numpy():4.3f},{self.lamb_l3.numpy():4.3f}]"
+        return l1#+l2
 
 
     def pinn_mode_set(self,value):
@@ -95,7 +96,7 @@ class PhysicsInformedNN(object):
         else:
             raise ValueError("Invalid arguments for pinn_mode")
 
-    def function_factory(self, train_x, train_y,uk):
+    def function_factory(self, train_x, train_y,uk,dataset):
         #function used to L-BFGS Adapted from Pi-Yueh Chuang <pychuang@gwu.edu>
         # Copyright © 2019 Pi-Yueh Chuang <pychuang@gwu.edu>
         #
@@ -176,10 +177,10 @@ class PhysicsInformedNN(object):
                 # calculate the loss
                 #loss_value = self.myloss(self.u_model(train_x, training=True), train_y)
                 #loss_value = self.myloss(self.u_model(train_x), train_y)
-                loss_bc,loss_x1,loss_x2,loss_x3,loss_f,R1,R2,R3= self.GetLoss(train_y, self.u_model(train_x),uk)   
+                loss_bc,loss_x1,loss_x2,loss_x3,loss_f= self.GetLoss(train_y, self.u_model(train_x),uk)   
                 loss_f=self.lamb_l1*loss_x1+self.lamb_l2*loss_x2+self.lamb_l3*loss_x3
                 #loss_f=loss_x1+loss_x2+loss_x3
-                loss_value=loss_bc+loss_f+self.lamb_l1*R1+self.lamb_l2*R2+self.lamb_l3*R3
+                loss_value=loss_bc+loss_f
   
 
             # calculate gradients and convert to 1D tf.Tensor
@@ -192,7 +193,7 @@ class PhysicsInformedNN(object):
             self.train_state.step=str(f.iter.numpy())
             self.train_state.rho=self.rho*rho
             self.train_state.PI=self.PI*PI
-            self.train_state.loss_test=self.erro().numpy()
+            self.train_state.loss_test=self.erro(dataset.Test).numpy()
             self.train_state.loss_train=loss_value.numpy()
             self.train_state.loss_train_bc=self.lamb_bc*loss_bc.numpy()
             self.train_state.loss_train_f=loss_f.numpy()
@@ -204,7 +205,7 @@ class PhysicsInformedNN(object):
             if f.iter%10==0:
                 #tf.print("Iter:", f.iter, loss:{loss_value:.4e}")
                 #tf.print("Iter:", f.iter, "loss:", loss_value)
-                custom_log_res=f"[{loss_x1.numpy()*self.lamb_l1.numpy():.2e},{loss_x2.numpy()*self.lamb_l2.numpy():.2e},{loss_x3.numpy()*self.lamb_l3.numpy():.2e},{R1.numpy()*self.lamb_l1.numpy():.2e},{R2.numpy()*self.lamb_l2.numpy():.2e},{R3.numpy()*self.lamb_l3.numpy():.2e}]"
+                custom_log_res=f"[{loss_x1.numpy()*self.lamb_l1.numpy():.2e},{loss_x2.numpy()*self.lamb_l2.numpy():.2e},{loss_x3.numpy()*self.lamb_l3.numpy():.2e}]"
                 custom_log=f"{self.rho.numpy()*rho:.1f} {self.PI.numpy()*PI:.2e}"
                 #custom_log=f" lambda=[{self.lamb_l1:.1f},{self.lamb_l2:.1f},{self.lamb_l3:.1f}], rho={self.rho.numpy()*rho:.1f}, PI={self.PI.numpy()*PI:.2e}"
                 self.logger.log_train_epoch(f.iter.numpy(), loss_value.numpy(),loss_f.numpy(), loss_bc.numpy(),custom=custom_log_res+custom_log)
@@ -255,9 +256,9 @@ class PhysicsInformedNN(object):
 
         return f
     @tf.function
-    def erro(self): 
-        y_pred = self.u_model(self.test_X)
-        yr=self.test_y
+    def erro(self,Test): 
+        y_pred = self.u_model(Test[0])
+        yr=Test[1]
         #erro=tf.sqrt((yr[:,-1,:] - y_pred[:,-1,:])**2)
         erro=tf.square(yr[:,:,:] - y_pred[:,:,0:2])
         return tf.reduce_mean(erro)
@@ -338,12 +339,8 @@ class PhysicsInformedNN(object):
             r1,r2,r3=self.ODE(y_pred,u,self.var)
         else:
             r1,r2,r3=tf.constant(0.0, dtype=tf.float32),tf.constant(0.0, dtype=tf.float32),tf.constant(0.0, dtype=tf.float32)
-        if self.pinn_mode==2 or self.pinn_mode==3:
-            #Using measured Pbh and Pwh to compute the residues
-            R1,R2,R3=self.ODE(tf.concat([y[:,:,0:2],y_pred[:,:,2:]],axis=2),u,self.var)
-        else:
-            R1,R2,R3=tf.constant(0.0, dtype=tf.float32),tf.constant(0.0, dtype=tf.float32),tf.constant(0.0, dtype=tf.float32)
-        return loss_obs,r1,r2,r3,(r1+r2+r3),R1,R2,R3
+        
+        return loss_obs,r1,r2,r3,(r1+r2+r3)
 
     #@tf.function
     def GetLamb(self,lamb_bc,X,y,u):
@@ -415,20 +412,22 @@ class PhysicsInformedNN(object):
         with tf.GradientTape() as tape:
             #init=time.time()
             #print("Loss computing")
-            loss_bc,loss_x1,loss_x2,loss_x3,loss_f,R1,R2,R3 = self.GetLoss(y, self.u_model(X),u)   
+            loss_bc,loss_x1,loss_x2,loss_x3,loss_f = self.GetLoss(y, self.u_model(X),u)   
             #end = time.time()
             #print(f"Runtime computing losses {end - start}")
             loss_f=self.lamb_l1*loss_x1+self.lamb_l2*loss_x2+self.lamb_l3*loss_x3
-            loss_n=self.lamb_l1*R1+self.lamb_l2*R2+self.lamb_l3*R3
+            
             #loss_value=self.lamb_bc*loss_bc+loss_f
-            loss_value=self.lamb_bc*loss_bc+self.lamb_l1*loss_x1+self.lamb_l2*loss_x2+self.lamb_l3*loss_x3+loss_n
+            loss_value=self.lamb_bc*loss_bc+self.lamb_l1*loss_x1+self.lamb_l2*loss_x2+self.lamb_l3*loss_x3
             #loss_value=loss_bc*self.lamb_bc+self.lamb_l1*loss_x1+self.lamb_l2*loss_x2+loss_x3*self.lamb_l3
 
         grads = tape.gradient(loss_value,  self.wrap_training_variables())
-        return grads,loss_bc,self.lamb_l1*loss_x1,self.lamb_l2*loss_x2,self.lamb_l3*loss_x3,loss_value,loss_f,loss_n,\
-            self.lamb_l1*R1,self.lamb_l2*R2,self.lamb_l3*R3
+        return grads,loss_bc,self.lamb_l1*loss_x1,self.lamb_l2*loss_x2,self.lamb_l3*loss_x3,loss_value,loss_f
     
-    def fit(self, train_dataset, tf_epochs=5000,adapt_w=False):
+    def fit(self, dataset, tf_epochs=5000,adapt_w=False):
+        self.logger.set_error_fn(self.erro,dataset.Test)
+        train_dataset=dataset.dataset_ADAM
+        
         if adapt_w==True:
             self.lamb_l1,self.lamb_l2,self.lamb_l3,self.lamb_bc=self.GetLambStates(self.lamb_l1,
                                                                             self.lamb_l2,
@@ -448,7 +447,7 @@ class PhysicsInformedNN(object):
                 # Iterate over the batches of the dataset.         
                 for step, (x_batch_train, y_batch_train, u_batch) in enumerate(train_dataset):
                     #init=time.time()
-                    grads,loss_bc,loss_x1,loss_x2,loss_x3,loss_value,loss_f,loss_n,R1,R2,R3=self.GetGradAndLoss(y_batch_train,x_batch_train,u_batch)
+                    grads,loss_bc,loss_x1,loss_x2,loss_x3,loss_value,loss_f=self.GetGradAndLoss(y_batch_train,x_batch_train,u_batch)
                     #print(f"Runtime of grad and loss {time.time() - init}")
                     if np.isnan(loss_value.numpy()):
                         print("Nan values appear. Stopping training",loss_x1.numpy(),loss_x2.numpy(),loss_x3.numpy(),loss_bc.numpy())
@@ -460,7 +459,7 @@ class PhysicsInformedNN(object):
                     # print("save 2")
                     self.train_state.rho=self.rho*rho
                     self.train_state.PI=self.PI*PI
-                    self.train_state.loss_test=self.erro().numpy()
+                    self.train_state.loss_test=self.erro(dataset.Test).numpy()
                     self.train_state.loss_train=loss_value
                     self.train_state.loss_train_bc=self.lamb_bc*loss_bc.numpy()
                     self.train_state.loss_train_f=loss_f.numpy()
@@ -482,7 +481,7 @@ class PhysicsInformedNN(object):
                                                                                            self.lamb_bc,
                                                                                            x_batch_train,y_batch_train,u_batch)
                     print(f'==============Weights===============')
-                    print(f'[ bc ,  r1 ,  r2 ,  r3 ,  R1 ,  R2 ,  R3 ]')
+                    print(f'[ bc ,  r1 ,  r2 ,  r3 ]')
                     print(f'{self.get_lamb_weights()}')
                 #     self.lamb_bc=self.GetLamb(self.lamb_bc,x_batch_train,y_batch_train,u_batch)   
                 #     #print(f"Runtime of update_lamb {time.time() - init}")
@@ -503,7 +502,7 @@ class PhysicsInformedNN(object):
                         self.rho.numpy()*rho,
                         self.PI.numpy()*PI)     
 
-                custom_log_res=f"|{loss_x1.numpy()*self.lamb_l1.numpy():.2e},{loss_x2.numpy()*self.lamb_l2.numpy():.2e},{loss_x3.numpy()*self.lamb_l3.numpy():.2e}|{R1.numpy()*self.lamb_l1.numpy():.2e},{R2.numpy()*self.lamb_l2.numpy():.2e},{R3.numpy()*self.lamb_l3.numpy():.2e}|"
+                custom_log_res=f"|{loss_x1.numpy()*self.lamb_l1.numpy():.2e},{loss_x2.numpy()*self.lamb_l2.numpy():.2e},{loss_x3.numpy()*self.lamb_l3.numpy():.2e}|"
                 custom_log=f"{self.rho.numpy()*rho:.1f} {self.PI.numpy()*PI:.2e}"
                 self.logger.log_train_epoch(self.epoch, loss_value, loss_f, loss_bc, custom=custom_log_res+custom_log)
                 # if self.epoch==100:
@@ -529,14 +528,16 @@ class PhysicsInformedNN(object):
 
     def fit_LBFGS(self, dataset, nt_config):
         #self.logger.log_train_start(self)
-        train_x,train_y, u_train = dataset
+        
+        self.logger.set_error_fn(self.erro, dataset.Test)
+        train_x,train_y, u_train = dataset.dataset_LBFGS
 
         rho = 836.8898;
         PI = 2.7e-8;
         
         self.logger.log_train_opt("LBFGS",self.pinn_mode,self.get_lamb_weights())
         self.logger.start_time=time.time()
-        func=self.function_factory(train_x, train_y,u_train)
+        func=self.function_factory(train_x, train_y,u_train,dataset)
         init_params = tf.dynamic_stitch(func.idx, self.wrap_training_variables())
         # train the model with L-BFGS solver
         results = tfp.optimizer.lbfgs_minimize(

@@ -15,10 +15,11 @@ class Logger(object):
     return datetime.fromtimestamp(time.time() - self.start_time).strftime("%M:%S")
 
   def __get_error_u(self):
-    return self.error_fn()
+    return self.error_fn(self.Test)
 
-  def set_error_fn(self, error_fn):
+  def set_error_fn(self, error_fn,Test):
     self.error_fn = error_fn
+    self.Test=Test
   
   def log_train_start(self, model):
     print("\nTraining started")
@@ -40,11 +41,11 @@ class Logger(object):
     # print(f"tf_epoch =      0  elapsed = 00:00  loss = 2.7391e-01  error = 9.0843e-01")
     print(f"—— Starting {name} optimization —— Pinn_mode:{mode}")
     print(f'==============Weights===============')
-    print(f'[ bc ,  r1 ,  r2 ,  r3 ,  R1 ,  R2 ,  R3 ]')
+    print(f'[ bc ,  r1 ,  r2 ,  r3]')
     print(f'{w}')
-    print('                                                    |======Common Residues======|===Additional Residues===|=ED parameters=|')
+    print('                                                    |======Common Residues======|=ED parameters=|')
     print('==============================================================================================================================')
-    print('epoch | elap|  Total  | Loss BC |Loss ODE |  Test   |    r1  |   r2   |  r3    |  R1    |   R2   |   R3   | rho |   PI    |')
+    print('epoch | elap|  Total  | Loss BC |Loss ODE |  Test   |    r1  |   r2   |  r3    | rho |   PI    |')
     print('==============================================================================================================================')
 
 

@@ -5,6 +5,7 @@ from casadi import sqrt as csqrt
 from casadi import fabs
 
 def EDO(x,u):
+    #Casadi Model
     pi=3.141592653589793    
     def Lim_c(x):
         return x[1]-x[0]
@@ -13,6 +14,8 @@ def EDO(x,u):
     pbh = x[0]; pwh = x[1]; q = x[2]
     ###############################
     fq = u[0]; zc = u[1]; pm=u[2]; pr=u[3]
+
+
     g   = 9.81;   # Gravitational acceleration constant [m/s�]
     Cc = 3.10049373466703e-08 ;   # Choke valve constant
     hw = 32;    # Total vertical distance in well [m]

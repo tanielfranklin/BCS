@@ -10,8 +10,10 @@ class Dataset_Pinn(object):
         self.N=dset[0].shape[0]
         self.data=self._dset_reshape(dset)
         self.xn=self._x_norm()
-        self.un=self._u_norm()
+        self.un,self.u=self._u_norm()
+        
         self.X,self.Y,self.U=self._DataSequence()
+        self.Test=None
         n_features=6 # two network inputs  (fk, zc,pmc,prn, x1,x2)
         nu=4 #number of exogenous
         n_measured=2 # number of measured states
@@ -29,11 +31,12 @@ class Dataset_Pinn(object):
         return np.array(val).T
     def _u_norm(self):
         u=self.data[:,:4]
+        
         val=[]
         for i,(j,k) in enumerate(zip(self.uc,self.u0)):
             val.append((u[:,i]-k)/j)
         un=np.array(val).T        
-        return un
+        return un, np.array(u)
 
     def _split_sequences(self):
             #https://machinelearningmastery.com/how-to-develop-lstm-models-for-multi-step-time-series-forecasting-of-household-power-consumption/
@@ -58,14 +61,35 @@ class Dataset_Pinn(object):
         y_train=b[:,:,-3:]
             
         return X_train,y_train,u_train
+    def _split_sequences_u(self):
+            #https://machinelearningmastery.com/how-to-develop-lstm-models-for-multi-step-time-series-forecasting-of-household-power-consumption/
+        X, y, u = list(), list(),list()
+        sequences=np.hstack((self.u,self.xn))
+        n_steps_in, n_steps_out=self.t_steps
+        for i in range(len(sequences)):
+            # find the end of this pattern
+            end_ix = i + n_steps_in
+            out_end_ix = end_ix + n_steps_out-1
+            # check if we are beyond the dataset
+            if out_end_ix > len(sequences)-1:
+                break
+            # gather input and output parts of the pattern
+            seq_x, seq_y= sequences[i:end_ix, :], sequences[end_ix:out_end_ix+1, :]
+            X.append(seq_x)
+            y.append(seq_y)
+        a=np.array(X)
+        b=np.array(y)
+        u_train=b[:,:,0:4]           
+        return u_train
 
     def _DataSequence(self):
         n_steps_in, n_steps_out = self.t_steps# convert into input/output
         a, b,c= self._split_sequences()
+        u_train=self._split_sequences_u()
         X=a[:,:,:]
         Y=b[:,:,-3:]
         U=b[:,:,0:4]
-        return X,Y,U
+        return X,Y,u_train
 
     def _split_train_test(self):
         def ToTensor(x):
@@ -74,20 +98,21 @@ class Dataset_Pinn(object):
         dset=self.data
         split_point = int(0.7*dset.shape[0]) # catch 70% for training
         train_X_full , train_y_full, u_train = self.X[:split_point, :] , ToTensor(self.Y[:split_point, :]), ToTensor(self.U[:split_point, :])
-        test_X_full , test_y_full = self.X[split_point:, :] , self.Y[split_point:, :]
+        test_X_full , test_y_full, self.u_test = self.X[split_point:, :] , self.Y[split_point:, :], ToTensor(self.U[split_point:, :])
         uk=ToTensor(dset[0:split_point,0:4])
+        self.TestFull=[ToTensor(test_X_full),ToTensor(test_y_full)]
         if self.remove_q==True:
             # Remove last state (q) unmeasured
             train_y=ToTensor(train_y_full[:,:,0:2])
             train_X=ToTensor(train_X_full[:,:,:-1])
-            test_y=ToTensor(test_y_full[:,:,0:2])
-            test_X=ToTensor(test_X_full[:,:,:-1])
+            self.Test=[ToTensor(test_X_full[:,:,:-1]),ToTensor(test_y_full[:,:,0:2])]
+            
         else:
             # Remove last state (q) unmeasured
             train_y=ToTensor(train_y_full)
             train_X=ToTensor(train_X_full)
-            test_y=ToTensor(test_y_full)
-            test_X=ToTensor(test_X_full)
+            self.Test=[ToTensor(test_X_full),ToTensor(test_y_full)]
+            
         
 
            
