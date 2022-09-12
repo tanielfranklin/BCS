@@ -5,3 +5,6 @@ Projeto de pesquisa BCS
 - Modelagem direta e inversa baseada em PINN 
     - Inicialmente via Deepxde
     - Melhorias usando Python, tensorflow, keras, RNN (LSTM)
+
+Simulação NMPC
+Preditor PINN
